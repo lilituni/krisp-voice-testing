@@ -1,0 +1,1 @@
+# An independent project exploring test design for voice-AI accuracy, inspired by Krisp's use cases
