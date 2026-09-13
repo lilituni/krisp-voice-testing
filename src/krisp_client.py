@@ -33,14 +33,14 @@ def _mask(token: str) -> str:
         return "*" * len(token)
     return f"{token[:4]}…{token[-4:]}"
 
-def run_session(wav_path, input_lang, output_lang, voice=VtVoice.FEMALE):
+def run_session(wav_path, input_lang, output_lang, voice=VtVoice.FEMALE, bvc=False):
     """
     Stream a WAV file through Krisp and return the final transcript/translation.
     Returns: {"source": str, "target": str}
     """
     results = {"source": {}, "target": {}}
 
-    # 1. Get a session key
+    # Evaluate a session key
     try:
         token = get_vt_session_key(API_KEY)
     except KrispVtApiError as e:
@@ -58,12 +58,13 @@ def run_session(wav_path, input_lang, output_lang, voice=VtVoice.FEMALE):
         _mask(session_key), token.get("expires_at"), token.get("key_id"),
     )
 
-    # 2. Load and prepare audio
+    # Load and prepare audio into 20ms chunks of 16kHz mono s16le PCM for streaming to the API.
     pcm = load_wav_as_pcm16(wav_path, target_sample_rate=_SAMPLE_RATE_HZ)
     chunks = [pcm[i:i + _CHUNK_BYTES] for i in range(0, len(pcm), _CHUNK_BYTES)]
-    chunks = [c for c in chunks if len(c) == _CHUNK_BYTES]  # drop incomplete trailing chunk
+    # Drop incomplete trailing chunk.
+    chunks = [c for c in chunks if len(c) == _CHUNK_BYTES]
 
-    # 3. Callbacks — are invoked with SDK events as they arrive.
+    # Callbacks — are invoked with SDK events as they arrive.
     def on_source_text(r):
         log.info("chunk_id=%s type=%s len=%d", r.chunk_id, r.type.name, len(r.transcript))
         # Collected in a dict keyed by chunk_id, rather than only appending on FINAL
@@ -73,25 +74,33 @@ def run_session(wav_path, input_lang, output_lang, voice=VtVoice.FEMALE):
             results["source"][r.chunk_id] = r.transcript
 
     def on_target_text(r):
+        # No translation expected, so ignore.
+        if input_lang == output_lang:
+            return
         if r.chunk_id:
             results["target"][r.chunk_id] = r.transcript
 
     def on_error(err):
         log.error("Voice Translation error: %s", err.name)
 
+    # Not used — we only care about transcript text, not synthesized audio.
     def on_audio(result):
-        pass  # not used — we only care about transcript text, not synthesized audio
+        pass
 
+    # Not used — no live event logging needed for this test.
     def on_event(event):
-        pass  # not used — no live event logging needed for this test
+        pass  
 
-    # 4. Open session
+    # Setup session.
     config = VtSessionConfig(
         auth_token=session_key,
         input_language_code=input_lang,
         output_language_code=output_lang,
         voice=voice,
+        background_voice_cancellation=bvc
     )
+
+    # Create a VT session with the given config and callbacks.
     try:
         vt = Vt.create(
             config,
@@ -111,14 +120,18 @@ def run_session(wav_path, input_lang, output_lang, voice=VtVoice.FEMALE):
         log.error("Failed to open VT session: %s", e)
         return None
 
-    # 5. Stream
+    # Stream audio chunks.
     for chunk in chunks:
         vt.process(chunk)
         time.sleep(_CHUNK_PACE_SEC)
+    # Drain the session to ensure all audio is processed and final transcripts are received.
     time.sleep(_DRAIN_SECONDS)
+
+    # Close the session and release resources.
     vt.close()
 
+    # Return the final transcript and translation, joining all chunked results into a single string for each.
     return {
         "source": " ".join(results["source"].values()),
-        "target": " ".join(results["target"].values()),
+        "target": " ".join(results["target"].values())
     }

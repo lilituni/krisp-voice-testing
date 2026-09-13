@@ -1,0 +1,7 @@
+.env
+venv/
+__pycache__/
+*.pyc
+# Copyrighted song lyrics (Case 3 baseline/results) — excluded from public repo
+baselines/case_3_acapella/
+results/case_3_acapella/
