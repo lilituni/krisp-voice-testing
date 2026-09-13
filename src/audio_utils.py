@@ -1,3 +1,10 @@
+"""Audio loading and preprocessing utilities.
+
+Loads WAV files of any reasonable format (sample rate, channel count) and
+converts them to the s16le PCM, 16kHz mono format required by the Krisp
+Voice Translation API, resampling/downmixing as needed.
+"""
+
 import numpy as np
 import logging
 import soundfile as sf

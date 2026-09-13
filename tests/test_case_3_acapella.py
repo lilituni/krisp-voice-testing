@@ -1,3 +1,11 @@
+"""Case 3: acapella song transcription (deliberate out-of-domain edge case).
+
+Krisp's Voice Translation API targets conversational speech; this test
+checks transcription accuracy on continuous singing, which lacks the
+natural pauses that typically drive utterance segmentation. See
+docs/test-plan.md, Case 3, for full scope and evaluation methodology.
+"""
+
 import os
 import shutil
 from src.krisp_client import run_session

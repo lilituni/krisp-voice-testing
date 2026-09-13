@@ -1,3 +1,10 @@
+"""LLM-as-judge scoring for transcription/translation quality.
+
+Compares a candidate transcript against a baseline using Gemini, scored
+1-5 per the rubric defined in test-plan.md (meaning preservation).
+Used by all three test cases to evaluate their output against ground truth.
+"""
+
 import google.genai as genai
 import os
 from dotenv import load_dotenv
