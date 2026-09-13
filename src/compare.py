@@ -11,10 +11,27 @@ from dotenv import load_dotenv
 load_dotenv()
 import logging
 logging.getLogger("google_genai").setLevel(logging.ERROR)
+log = logging.getLogger("krisp-voice-testing")
 import re
+import functools
+import time
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+def retry(func):
+    """Decorator to retry a function up to 3 times with a 2-second delay on failure."""
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        for attempt in range(3):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                log.error("Attempt %d/3 failed: %s", attempt + 1, e)
+                time.sleep(2)
+        raise
+    return inner
+
+@retry
 def score_transcription(candidate: str, baseline: str) -> tuple[int, str]:
     """
     Compare a candidate transcription against a baseline.
