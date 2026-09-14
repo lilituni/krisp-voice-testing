@@ -6,6 +6,7 @@ Used by all three test cases to evaluate their output against ground truth.
 """
 
 import google.genai as genai
+from google.genai import types
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -53,9 +54,12 @@ Candidate: {candidate}
 Respond with just the number and a one-line reason."""
 
     # Send the prompt to the language model and get the response.
+    # temperature=0 tells the model to always pick the most likely next token rather than sampling probabilistically.
+    #this removes most of the variance one'd see from run to run.
     response = client.models.generate_content(
         model="gemini-3.6-flash",
         contents=prompt,
+        config=types.GenerateContentConfig(temperature=0)
     )
     # Extract the text from the response.
     text = response.text.strip()
