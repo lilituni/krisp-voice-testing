@@ -84,6 +84,7 @@ def run_session(wav_path, input_lang, output_lang, voice=VtVoice.FEMALE, bvc=Fal
         log.error("Voice Translation error: %s", err.name)
 
     # Not used — we only care about transcript text, not synthesized audio.
+    # Note: `voice` only affects synthesized translated audio, unused in these tests.
     def on_audio(result):
         pass
 
