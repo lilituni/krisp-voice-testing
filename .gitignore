@@ -3,6 +3,7 @@ venv/
 __pycache__/
 *.pyc
 # Copyrighted song lyrics (Case 3 baseline/results) — excluded from public repo
-baselines/case_3_acapella/
+baselines/case_3_acapella/*
+!baselines/case_3_acapella/README.md
 results/
 data/audio_samples/
